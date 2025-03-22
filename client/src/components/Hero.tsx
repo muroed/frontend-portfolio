@@ -1,7 +1,87 @@
 import { useInView } from "@/hooks/useInView";
+import { useState, useEffect } from "react";
 
 export default function Hero() {
   const { ref, isVisible } = useInView();
+  const [typedText, setTypedText] = useState("");
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const [cursorVisible, setCursorVisible] = useState(true);
+
+  const codeText = `const developer = {
+  name: 'Frontend Developer',
+  skills: [
+    'JavaScript', 
+    'React', 
+    'TypeScript',
+    'HTML/CSS'
+  ],
+  experience: 5,
+  seeking: '1M ₽/sec'
+};
+
+function hire(dev) {
+  return \`Hired \${dev.name}\`;
+}
+
+hire(developer); // Let's work together!`;
+
+  useEffect(() => {
+    if (isVisible && !isTypingComplete) {
+      let currentIndex = 0;
+      const typingSpeed = 30; // ms per character
+      
+      const typingInterval = setInterval(() => {
+        if (currentIndex < codeText.length) {
+          setTypedText(codeText.substring(0, currentIndex + 1));
+          currentIndex++;
+        } else {
+          clearInterval(typingInterval);
+          setIsTypingComplete(true);
+        }
+      }, typingSpeed);
+      
+      return () => clearInterval(typingInterval);
+    }
+  }, [isVisible, isTypingComplete]);
+
+  // Blinking cursor effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setCursorVisible(prev => !prev);
+    }, 500);
+    
+    return () => clearInterval(cursorInterval);
+  }, []);
+
+  // Format the code with syntax highlighting
+  const formatCode = (code: string) => {
+    // This is a simplified approach. For a production app, 
+    // you might want to use a proper syntax highlighter library
+
+    // Replace different syntax elements with styled spans
+    return code
+      .replace(/const|function|return/g, match => 
+        `<span class="text-indigo-400">${match}</span>`)
+      .replace(/developer|dev|hire/g, match => {
+        if (match === 'developer') return `<span class="text-green-400">developer</span>`;
+        if (match === 'hire') return `<span class="text-blue-400">hire</span>`;
+        return `<span class="text-indigo-300">${match}</span>`;
+      })
+      .replace(/[{}[\]()]/g, match => 
+        `<span class="text-orange-300">${match}</span>`)
+      .replace(/'[^']*'/g, match => 
+        `<span class="text-green-300">${match}</span>`)
+      .replace(/;/g, match => 
+        `<span class="text-white">${match}</span>`)
+      .replace(/=|:/g, match => 
+        `<span class="text-white">${match}</span>`)
+      .replace(/,/g, match => 
+        `<span class="text-white">${match}</span>`)
+      .replace(/\d+/g, match => 
+        `<span class="text-indigo-400">${match}</span>`)
+      .replace(/\/\/ Let's work together!/g, match => 
+        `<span class="text-slate-500">${match}</span>`);
+  };
   
   return (
     <section className="relative bg-gradient-to-r from-slate-800 to-slate-900 text-white py-20">
@@ -32,32 +112,27 @@ export default function Hero() {
             </div>
           </div>
           <div className="md:w-1/2 flex justify-center">
-            <div ref={ref} className={`relative bg-slate-700 rounded-xl p-1 shadow-2xl w-full max-w-md transform transition-transform duration-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+            <div 
+              ref={ref} 
+              className={`relative bg-slate-700 rounded-xl p-1 shadow-2xl w-full max-w-md transform transition-all duration-700 ${
+                isVisible ? 'translate-y-0 opacity-100 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'translate-y-10 opacity-0'
+              }`}
+            >
               <div className="bg-slate-800 rounded-lg p-4">
                 <div className="flex space-x-2 mb-4">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <pre className="font-mono text-xs md:text-sm overflow-x-auto bg-slate-900 rounded p-4 text-slate-300">
-<span className="text-indigo-400">const</span> <span className="text-green-400">developer</span> <span className="text-white">=</span> <span className="text-orange-300">{'{'}</span>
-  <span className="text-indigo-300">name</span><span className="text-white">:</span> <span className="text-green-300">'Frontend Developer'</span><span className="text-white">,</span>
-  <span className="text-indigo-300">skills</span><span className="text-white">:</span> <span className="text-orange-300">[</span>
-    <span className="text-green-300">'JavaScript'</span><span className="text-white">,</span> 
-    <span className="text-green-300">'React'</span><span className="text-white">,</span> 
-    <span className="text-green-300">'TypeScript'</span><span className="text-white">,</span>
-    <span className="text-green-300">'HTML/CSS'</span>
-  <span className="text-orange-300">]</span><span className="text-white">,</span>
-  <span className="text-indigo-300">experience</span><span className="text-white">:</span> <span className="text-indigo-400">5</span><span className="text-white">,</span>
-  <span className="text-indigo-300">seeking</span><span className="text-white">:</span> <span className="text-green-300">'1M ₽/sec'</span>
-<span className="text-orange-300">{'}'}</span><span className="text-white">;</span>
-
-<span className="text-indigo-400">function</span> <span className="text-blue-400">hire</span><span className="text-orange-300">(</span><span className="text-indigo-300">dev</span><span className="text-orange-300">)</span> <span className="text-orange-300">{'{'}</span>
-  <span className="text-indigo-400">return</span> <span className="text-green-300">`Hired ${'{'}dev.name{'}'}`</span><span className="text-white">;</span>
-<span className="text-orange-300">{'}'}</span>
-
-<span className="text-indigo-300">hire</span><span className="text-orange-300">(</span><span className="text-indigo-300">developer</span><span className="text-orange-300">)</span><span className="text-white">;</span> <span className="text-slate-500">// Let's work together!</span>
-</pre>
+                <pre className="font-mono text-xs md:text-sm overflow-x-auto bg-slate-900 rounded p-4 text-slate-300 relative">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: formatCode(typedText) }} 
+                    className="inline"
+                  />
+                  <span 
+                    className={`inline-block w-2 h-4 ml-1 bg-white ${cursorVisible ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                  ></span>
+                </pre>
               </div>
             </div>
           </div>
