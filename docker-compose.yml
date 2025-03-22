@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  # Основное приложение
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: frontend-portfolio
+    container_name: portfolio-app
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      # Настройки GitHub API (добавьте собственные значения или используйте .env)
+      - GITHUB_USERNAME=${GITHUB_USERNAME:-octocat}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      # Для разработки, в производственной среде это можно убрать
+      - ./:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - portfolio-net
+
+networks:
+  portfolio-net:
+    driver: bridge
