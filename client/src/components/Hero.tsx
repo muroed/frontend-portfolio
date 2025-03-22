@@ -1,50 +1,82 @@
 import { useInView } from "@/hooks/useInView";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Hero() {
   const { ref, isVisible } = useInView();
-  const [typedText, setTypedText] = useState("");
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [typingComplete, setTypingComplete] = useState(false);
+  const [visibleLinesCount, setVisibleLinesCount] = useState(0);
+  const [visibleCharsCount, setVisibleCharsCount] = useState(0);
+  const terminalRef = useRef<HTMLPreElement>(null);
 
-  const codeText = `const developer = {
-  name: 'Frontend Developer',
-  skills: [
-    'JavaScript', 
-    'React', 
-    'TypeScript',
-    'HTML/CSS'
-  ],
-  experience: 5,
-  seeking: '1M ₽/sec'
-};
+  // Линии кода для построчной анимации
+  const codeLines = [
+    '<span class="text-indigo-400">const</span> <span class="text-green-400">developer</span> <span class="text-white">=</span> <span class="text-orange-300">{</span>',
+    '  <span class="text-indigo-300">name</span><span class="text-white">:</span> <span class="text-green-300">\'Frontend Developer\'</span><span class="text-white">,</span>',
+    '  <span class="text-indigo-300">skills</span><span class="text-white">:</span> <span class="text-orange-300">[</span>',
+    '    <span class="text-green-300">\'JavaScript\'</span><span class="text-white">,</span>',
+    '    <span class="text-green-300">\'React\'</span><span class="text-white">,</span>',
+    '    <span class="text-green-300">\'TypeScript\'</span><span class="text-white">,</span>',
+    '    <span class="text-green-300">\'HTML/CSS\'</span>',
+    '  <span class="text-orange-300">]</span><span class="text-white">,</span>',
+    '  <span class="text-indigo-300">experience</span><span class="text-white">:</span> <span class="text-indigo-400">5</span><span class="text-white">,</span>',
+    '  <span class="text-indigo-300">seeking</span><span class="text-white">:</span> <span class="text-green-300">\'1M ₽/sec\'</span>',
+    '<span class="text-orange-300">}</span><span class="text-white">;</span>',
+    '',
+    '<span class="text-indigo-400">function</span> <span class="text-blue-400">hire</span><span class="text-orange-300">(</span><span class="text-indigo-300">dev</span><span class="text-orange-300">)</span> <span class="text-orange-300">{</span>',
+    '  <span class="text-indigo-400">return</span> <span class="text-green-300">`Hired ${dev.name}`</span><span class="text-white">;</span>',
+    '<span class="text-orange-300">}</span>',
+    '',
+    '<span class="text-indigo-300">hire</span><span class="text-orange-300">(</span><span class="text-green-400">developer</span><span class="text-orange-300">)</span><span class="text-white">;</span> <span class="text-slate-500">// Let\'s work together!</span>',
+  ];
 
-function hire(dev) {
-  return \`Hired \${dev.name}\`;
-}
-
-hire(developer); // Let's work together!`;
-
+  // Эффект для анимации печатания построчно
   useEffect(() => {
-    if (isVisible && !isTypingComplete) {
-      let currentIndex = 0;
-      const typingSpeed = 30; // ms per character
+    if (isVisible && !typingComplete) {
+      // Сброс при повторном появлении
+      setVisibleLinesCount(0);
+      setVisibleCharsCount(0);
       
+      let currentLine = 0;
+      let currentChar = 0;
+      
+      // Скорость печати (мс)
+      const lineDelay = 100;
+      const charSpeed = 30;
+      
+      // Интервал для добавления новых символов
       const typingInterval = setInterval(() => {
-        if (currentIndex < codeText.length) {
-          setTypedText(codeText.substring(0, currentIndex + 1));
-          currentIndex++;
+        if (currentLine < codeLines.length) {
+          const currentLineText = codeLines[currentLine];
+          
+          if (currentChar < currentLineText.length) {
+            // Печатаем по символу
+            setVisibleCharsCount(prev => prev + 1);
+            currentChar++;
+          } else {
+            // Переходим к следующей строке
+            setVisibleLinesCount(prev => prev + 1);
+            setVisibleCharsCount(0);
+            currentLine++;
+            currentChar = 0;
+            
+            // Прокрутка вниз при добавлении новых строк
+            if (terminalRef.current) {
+              terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+            }
+          }
         } else {
+          // Анимация завершена
           clearInterval(typingInterval);
-          setIsTypingComplete(true);
+          setTypingComplete(true);
         }
-      }, typingSpeed);
+      }, charSpeed);
       
       return () => clearInterval(typingInterval);
     }
-  }, [isVisible, isTypingComplete]);
+  }, [isVisible, typingComplete]);
 
-  // Blinking cursor effect
+  // Эффект для мигающего курсора
   useEffect(() => {
     const cursorInterval = setInterval(() => {
       setCursorVisible(prev => !prev);
@@ -53,36 +85,6 @@ hire(developer); // Let's work together!`;
     return () => clearInterval(cursorInterval);
   }, []);
 
-  // Format the code with syntax highlighting
-  const formatCode = (code: string) => {
-    // This is a simplified approach. For a production app, 
-    // you might want to use a proper syntax highlighter library
-
-    // Replace different syntax elements with styled spans
-    return code
-      .replace(/const|function|return/g, match => 
-        `<span class="text-indigo-400">${match}</span>`)
-      .replace(/developer|dev|hire/g, match => {
-        if (match === 'developer') return `<span class="text-green-400">developer</span>`;
-        if (match === 'hire') return `<span class="text-blue-400">hire</span>`;
-        return `<span class="text-indigo-300">${match}</span>`;
-      })
-      .replace(/[{}[\]()]/g, match => 
-        `<span class="text-orange-300">${match}</span>`)
-      .replace(/'[^']*'/g, match => 
-        `<span class="text-green-300">${match}</span>`)
-      .replace(/;/g, match => 
-        `<span class="text-white">${match}</span>`)
-      .replace(/=|:/g, match => 
-        `<span class="text-white">${match}</span>`)
-      .replace(/,/g, match => 
-        `<span class="text-white">${match}</span>`)
-      .replace(/\d+/g, match => 
-        `<span class="text-indigo-400">${match}</span>`)
-      .replace(/\/\/ Let's work together!/g, match => 
-        `<span class="text-slate-500">${match}</span>`);
-  };
-  
   return (
     <section className="relative bg-gradient-to-r from-slate-800 to-slate-900 text-white py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,14 +126,28 @@ hire(developer); // Let's work together!`;
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <pre className="font-mono text-xs md:text-sm overflow-x-auto bg-slate-900 rounded p-4 text-slate-300 relative">
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: formatCode(typedText) }} 
-                    className="inline"
-                  />
+                <pre 
+                  ref={terminalRef}
+                  className="font-mono text-xs md:text-sm overflow-x-auto bg-slate-900 rounded p-4 text-slate-300 relative max-h-[300px] overflow-y-auto"
+                >
+                  {/* Отображаем строки кода, одну за другой */}
+                  {codeLines.slice(0, visibleLinesCount).map((line, index) => (
+                    <div key={index} dangerouslySetInnerHTML={{ __html: line }} />
+                  ))}
+                  
+                  {/* Текущая строка с посимвольной анимацией */}
+                  {visibleLinesCount < codeLines.length && (
+                    <div 
+                      dangerouslySetInnerHTML={{ 
+                        __html: codeLines[visibleLinesCount].substring(0, visibleCharsCount) 
+                      }} 
+                    />
+                  )}
+                  
+                  {/* Мигающий курсор */}
                   <span 
-                    className={`inline-block w-2 h-4 ml-1 bg-white ${cursorVisible ? 'opacity-100' : 'opacity-0'} transition-opacity`}
-                  ></span>
+                    className={`inline-block w-2 h-4 bg-white align-middle ${cursorVisible ? 'opacity-100' : 'opacity-0'} transition-opacity`}
+                  />
                 </pre>
               </div>
             </div>
